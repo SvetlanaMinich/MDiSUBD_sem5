@@ -2,105 +2,89 @@
 
 **Система бронирования спортивных площадок**
 
-1. Пользователи (Users)
-*Описание: Сущность для хранения информации о пользователях системы.*
-*Поля:*
-- user_id (INT, PK) — уникальный идентификатор пользователя.
-- name (VARCHAR) — имя пользователя.
-- email (VARCHAR, UNIQUE) — электронная почта пользователя.
-- password (VARCHAR) — пароль для авторизации.
-- role_id (INT, FK) — роль пользователя (ссылка на таблицу "Роли").
-- phone_number (VARCHAR) — номер телефона.
-- created_at (DATETIME) — дата и время регистрации.
-- updated_at (DATETIME) — дата последнего обновления данных.
-2. Роли (Roles)
-*Описание: Сущность для управления ролями пользователей.*
-*Поля:*
-- role_id (INT, PK) — уникальный идентификатор роли.
-- role_name (VARCHAR) — название роли (например, "Администратор", "Пользователь").
-- description (TEXT) — описание роли.
-3. Площадки (Facilities)
-*Описание: Информация о спортивных площадках, доступных для бронирования.*
-*Поля:*
-- facility_id (INT, PK) — уникальный идентификатор площадки.
-- facility_name (VARCHAR) — название площадки.
-- location (VARCHAR) — местоположение площадки.
-- type_id (INT, FK) — тип площадки (ссылка на таблицу "Типы площадок").
-- capacity (INT) — вместимость площадки.
-- price_per_hour (DECIMAL) — стоимость аренды в час.
-- availability_status (VARCHAR) — статус доступности (например, "доступно", "занято").
-- created_at (DATETIME) — дата и время создания площадки.
-- updated_at (DATETIME) — дата последнего обновления.
-4. Типы площадок (Facility Types)
-*Описание: Типы спортивных площадок.*
-*Поля:*
-- type_id (INT, PK) — уникальный идентификатор типа.
-- type_name (VARCHAR) — название типа (например, "Футбольное поле", "Теннисный корт").
-- description (TEXT) — описание типа.
-5. Бронирования (Bookings)
-*Описание: Сущность для хранения информации о бронированиях.*
-*Поля:*
-- booking_id (INT, PK) — уникальный идентификатор бронирования.
-- user_id (INT, FK) — пользователь, который забронировал площадку.
-- facility_id (INT, FK) — идентификатор забронированной площадки.
-- booking_date (DATE) — дата бронирования.
-- start_time (TIME) — время начала бронирования.
-- end_time (TIME) — время окончания бронирования.
-- total_price (DECIMAL) — итоговая стоимость бронирования.
-- status (VARCHAR) — статус бронирования (например, "забронировано", "отменено").
-- created_at (DATETIME) — дата и время создания бронирования.
-- updated_at (DATETIME) — дата последнего обновления.
-6. Действия пользователей (User Actions)
-*Описание: Лог действий пользователей в системе.*
-*Поля:*
-- action_id (INT, PK) — уникальный идентификатор действия.
-- user_id (INT, FK) — пользователь, который выполнил действие.
-- action_type (VARCHAR) — тип действия (например, "создал бронирование", "изменил бронирование").
-- action_time (DATETIME) — время выполнения действия.
-- details (TEXT) — дополнительные данные о действии.
-7. Статусы бронирования (Booking Statuses)
-*Описание: Различные статусы, которые может иметь бронирование.*
-*Поля:*
-- status_id (INT, PK) — уникальный идентификатор статуса.
-- status_name (VARCHAR) — название статуса (например, "забронировано", "отменено", "прошло").
-- description (TEXT) — описание статуса.
-8. Оплаты (Payments)
-*Описание: Информация о транзакциях, связанных с оплатой бронирований.*
-*Поля:*
-- payment_id (INT, PK) — уникальный идентификатор оплаты.
-- booking_id (INT, FK) — бронирование, за которое была произведена оплата.
-- amount (DECIMAL) — сумма оплаты.
-- payment_date (DATETIME) — дата и время оплаты.
-- payment_method (VARCHAR) — способ оплаты (например, "Карта", "Наличные").
-9. Отзывы (Reviews)
-*Описание: Отзывы пользователей о площадках.*
-*Поля:*
-- review_id (INT, PK) — уникальный идентификатор отзыва.
-- user_id (INT, FK) — пользователь, который оставил отзыв.
-- facility_id (INT, FK) — площадка, на которую написан отзыв.
-- rating (INT) — оценка площадки (например, от 1 до 5).
-- comment (TEXT) — текст отзыва.
-- created_at (DATETIME) — дата создания отзыва.
-10. История изменений бронирований (Booking History)
-*Описание: Лог всех изменений, которые были внесены в бронирования.*
-*Поля:*
-- history_id (INT, PK) — уникальный идентификатор изменения.
-- booking_id (INT, FK) — бронирование, к которому относится изменение.
-- change_time (DATETIME) — время изменения.
-- change_type (VARCHAR) — тип изменения (например, "изменено время", "отменено").
-- old_value (TEXT) — старое значение.
-- new_value (TEXT) — новое значение.
-11. Типы оплат (Payment Types)
-*Описание: Информация о типах оплат.*
-*Поля:*
-- payment_type_id (INT, PK) — уникальный идентификатор типа оплаты.
-- payment_type_name (VARCHAR) — название типа оплаты (например, "Карта", "Наличные").
-- description (TEXT) — описание типа.
-12. Расписание площадок (Facility Schedule)
-*Описание: Специфическое расписание работы площадок (например, будние дни и выходные).*
-*Поля:*
-- schedule_id (INT, PK) — уникальный идентификатор расписания.
-- facility_id (INT, FK) — идентификатор площадки.
-- day_of_week (VARCHAR) — день недели (например, "Понедельник", "Суббота").
-- opening_time (TIME) — время открытия.
-- closing_time (TIME) — время закрытия.
+
+**Функциональные требования к приложению:**
+1. **Незарегистрированный пользователь**
+- Просмотр информации о площадках
+- Просмотр отзывов о площадках
+- Просмотр расписания площадок
+- Регистрация / Авторизация 
+2. **Клиент (зарегистрированный пользователь)**
+- Просмотр информации о площадках
+- Просмотр отзывов о площадках
+- Просмотр расписания площадок
+- Бронирование площадки (CRUD)
+- Просмотр истории бронирований
+- Редактирование профиля
+- Создание отзывов (CRUD)
+3. **Администратор**
+- Удаление пользователей, которые не заходили в аккаунт более 3 лет
+- Управление площадками (CRUD)
+- Управление расписанием (CRUD)
+- Удаление нецензурных отзывов, спама
+4. **Независящие от пользователя функции**
+- Журналирование действий пользователя (вход в систему, регистрация, бронирование, редактирование профиля, отмена бронирования и т.д.)
+
+
+**Сущности**
+1. Field  *one-to-many with Review, Schedule, Reservation; Many-to-many with Client*
+- id (INT, pk)
+- field_name (VARCHAR, max_length=128)
+- location (VARCHAR, max_length=128)
+- price_per_hour (DECIMAL)
+- rating (INT, max=5, min=1, default=None)
+2. Review  *Many-to-one with Client, Field*
+- id (INT, pk)
+- client_id (INT, FK) 
+- field_id (INT, FK)
+- rating (INT, max=5, min=1, default=5)
+- text (VARCHAR, max_length=512)
+- created_at (DATETIME)
+3. Schedule  *many-to-one with Field*
+- id (INT, pk)
+- field_id (INT, FK)
+- time_from (DATETIME)
+- time_to (DATETIME)
+- available (BOOLEAN, default=TRUE)
+4. Reservation  *Many-to-one wit Client, Field; One-to-one with Schedule*
+- id (INT, pk)
+- client_id (INT, FK)
+- field_id (INT, FK)
+- schedule_id (INT, FK)
+- created_at (DATETIME)
+5. Client  *One-to-many with Review, Reservation, ClientReservations; One-to-one ClientCredentials, ClientPaymentCredentials; Many-to-many with Field, ClubCard*
+- id (INT, pk)
+- name (VARCHAR, max_length=32)
+- surname (VARCHAR, max_length=32)
+- birth_date (DATETIME)
+6. ClientCredentials  *One-to-one with Client*
+- id (INT, pk)
+- client_id (INT, FK)
+- login (VARCHAR, max_length=32)
+- password (VARCHAR, min_length=8, max_length=32)
+7. ClientPaymentCredentials  *One-to-one with Client*
+- id (INT, pk)  
+- client_id (INT, FK)
+- card_IBAN (VARCHAR, length=19)
+- card_validity_period (DATETIME)
+8. Admin
+- id (INT, pk)
+- nickname (VARCHAR, max_length=32)
+- login (VARCHAR, max_length=32)
+- password (VARCHAR, min_length=8, max_length=32)
+9. Logs  *Many-to-many with Client*
+- id (INT, pk)
+- client_id (INT, FK)
+- time (DATETIME)
+- type (VARCHAR, max_length=32)
+- text (TEXT)
+10. ClubCard  *Many-to_many with Client*
+- id (INT, pk)
+- hours (INT)
+- field_id (INT, FK)
+11. ClientClubCard  *One-to-eon with Client, ClubCard*
+- id (INT, pk)
+- client_id (INT, FK)
+- clubcard_id (INT, FK)
+- hours_left (INT, default=clubcard.hours)
+
