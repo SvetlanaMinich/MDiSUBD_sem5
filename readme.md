@@ -56,7 +56,7 @@
 - schedule_id (INT, FK)
 - created_at (DATETIME)
 5. Client
-*One-to-many with Review, Reservation, ClientReservations; One-to-one ClientCredentials, ClientPaymentCredentials; Many-to-many with Field, ClubCard*
+*One-to-many with Review, Reservation; One-to-one ClientCredentials, ClientPaymentCredentials; Many-to-many with Field, ClubCard*
 - id (INT, pk)
 - name (VARCHAR, max_length=32)
 - surname (VARCHAR, max_length=32)
@@ -91,7 +91,7 @@
 - hours (INT)
 - field_id (INT, FK)
 11. ClientClubCard
-*One-to-eon with Client, ClubCard*
+*One-to-one with Client, ClubCard*
 - id (INT, pk)
 - client_id (INT, FK)
 - clubcard_id (INT, FK)
