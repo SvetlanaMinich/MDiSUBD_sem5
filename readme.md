@@ -65,7 +65,7 @@
 *One-to-one with Client*
 - id (INT, pk)
 - client_id (INT, FK)
-- login (VARCHAR, max_length=32)
+- login (VARCHAR, max_length=32, UNIQUE)
 - password (VARCHAR, min_length=8, max_length=32)
 7. ClientPaymentCredentials
 *One-to-one with Client*
@@ -76,17 +76,17 @@
 8. Admin
 - id (INT, pk)
 - nickname (VARCHAR, max_length=32)
-- login (VARCHAR, max_length=32)
+- login (VARCHAR, max_length=32, UNIQUE)
 - password (VARCHAR, min_length=8, max_length=32)
-9. Logs
-*Many-to-many with Client*
+9. Logs 
+*Many-to-one with Client*
 - id (INT, pk)
 - client_id (INT, FK)
 - time (DATETIME)
 - type (VARCHAR, max_length=32)
 - text (TEXT)
 10. ClubCard
-*Many-to_many with Client*
+*Many-to_many with Client, Many-to-One with Field*
 - id (INT, pk)
 - hours (INT)
 - field_id (INT, FK)
