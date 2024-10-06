@@ -17,6 +17,22 @@ class queries:
         self.cursor.execute(sql)
         self.connection.commit()
 
+    def get_field_by_id(self,
+                        field_id:int):
+        sql = f'''select * from field
+        where field_id = {field_id}'''
+        self.cursor.execute(sql)
+        field = self.cursor.fetchone()
+        return field
+
+    def get_field_by_name(self,
+                          field_name:str):
+        sql = f'''select * from field
+        where field_name = {field_name}'''
+        self.cursor.execute(sql)
+        field = self.cursor.fetchone()
+        return field
+
     def update_field(self,
                      field_id:int,
                      field_name:str,
@@ -49,9 +65,20 @@ class queries:
         sql = f'''insert into adminacc
         (nickname, login, admin_password) 
         values
-        ({nickname}, {login}, {password})'''
+        ({nickname}, {login}, {password})
+        returning adminacc_id'''
         self.cursor.execute(sql)
+        admin_id = self.cursor.fetchone()[0]
         self.connection.commit()
+        return admin_id
+    
+    def get_admin_by_id(self,
+                        admin_id:int):
+        sql = f'''select * from adminacc
+        where adminacc_id = {admin_id}'''
+        self.cursor.execute(sql)
+        admin = self.cursor.fetchone()
+        return admin
 
     def update_admin(self,
                      admin_id:int,
@@ -93,6 +120,15 @@ class queries:
         self.cursor.execute(sql)
 
         self.connection.commit()  
+        return client_id
+    
+    def get_client_by_id(self,
+                         client_id:int):
+        sql = f'''select * from client
+        where client_id = {client_id}'''
+        self.cursor.execute(sql)
+        client = self.cursor.fetchone()
+        return client
 
     def update_client_info(self, 
                     client_id:int,
@@ -133,6 +169,14 @@ class queries:
         self.cursor.execute(sql)
         self.connection.commit()
 
+    def get_clientPaymentCredentials_by_clientId(self,
+                                                 client_id:int):
+        sql = f'''select * from clientpaymentcredentials
+        where client_id = {client_id}'''
+        self.cursor.execute(sql)
+        clientpayment = self.cursor.fetchone()
+        return clientpayment
+
     def update_clientPaymentCredentials(self,
                                         client_id:int,
                                         card_iban:str):
@@ -156,9 +200,20 @@ class queries:
         sql = f'''insert into clubcard
         (hours, field_id)
         values
-        ({hours}, {field_id})'''
+        ({hours}, {field_id})
+        returning clubcard_id'''
         self.cursor.execute(sql)
+        clubcard_id = self.cursor.fetchone()[0]
         self.connection.commit()
+        return clubcard_id
+
+    def get_clubCard_by_id(self,
+                           clubcard_id:int):
+        sql = f'''select * from clubcard
+        where clubcard_id = {clubcard_id}'''
+        self.cursor.execute(sql)
+        clubcard = self.cursor.fetchone()
+        return clubcard
 
     def update_clubcard(self,
                         clubcard_id:int,
@@ -190,6 +245,22 @@ class queries:
         self.cursor.execute(sql)
         self.connection.commit()
 
+    def get_reviews_by_fieldId(self,
+                              field_id:int):
+        sql = f'''select * from review
+        where field_id = {field_id}'''
+        self.cursor.execute(sql)
+        reviews = self.cursor.fetchmany()
+        return reviews
+    
+    def get_reviews_by_clientId(self,
+                                client_id:int):
+        sql = f'''select * from review
+        where client_id = {client_id}'''
+        self.cursor.execute(sql)
+        reviews = self.cursor.fetchmany()
+        return reviews
+
     def update_review(self,
                       review_id:int,
                       rating: int,
@@ -218,6 +289,14 @@ class queries:
         ({field_id}, {time_from}, {time_to})'''
         self.cursor.execute(sql)
         self.connection.commit()
+
+    def get_schedule_by_fieldId(self,
+                                field_id:int):
+        sql = f'''select * from schedule
+        where field_id = {field_id}'''
+        self.cursor.execute(sql)
+        schedules = self.cursor.fetchmany()
+        return schedules
 
     def update_schedule(self,
                         schedule_id:int,
@@ -252,6 +331,14 @@ class queries:
         self.cursor.execute(sql)
 
         self.connection.commit()
+
+    def get_reservation_by_clientId(self,
+                                    client_id:int):
+        sql = f'''select * from reservation
+        where client_id = {client_id}'''
+        self.cursor.execute(sql)
+        reservations = self.cursor.fetchmany()
+        return reservations
     
     def delete_reservation(self,
                            reservation_id:int, 
