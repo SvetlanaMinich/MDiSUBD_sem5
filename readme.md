@@ -25,6 +25,14 @@
 - Журналирование действий пользователя (вход в систему, регистрация, бронирование, редактирование профиля, отмена бронирования и т.д.)
 
 
+
+
+
+**.venv/Scripts/activate**
+
+
+
+
 **Сущности**
 1. Field
 *one-to-many with Review, Schedule, Reservation; Many-to-many with Client*
@@ -52,7 +60,6 @@
 *Many-to-one wit Client, Field; One-to-one with Schedule*
 - id (INT, pk)
 - client_id (INT, FK)
-- field_id (INT, FK)
 - schedule_id (INT, FK)
 - created_at (DATETIME)
 5. Client

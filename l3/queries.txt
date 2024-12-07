@@ -1,0 +1,65 @@
+create database app;
+drop database app;
+
+create table tapp (
+    id serial primary key,
+    nickname varchar(50) unique check(nickname != ''),
+    age integer not null constraint age_limit check(age >= 18 and age < 120),
+    registered_date date not null default now(),
+    is_online boolean not null,
+);
+
+create table torder (
+    id serial primary key,
+    price decimal(8,2) not null constraint price_not_zero check(price > 0),
+    action_date timestamp default now(),
+    customer_id integer references tapp (id) on delete set null,
+);
+
+alter table tapp
+add column password varchar(12) not null check(length(password) >= 8),
+drop column age,
+alter column nickname set check(length(nickname) > 1)
+rename column registered_date to r_date,
+rename to tuser;
+
+insert into tuser (nickname, is_online)
+values ("Masha", true) returning id;
+
+select * from tuser;
+
+select nickname from tuser;
+
+select nickname, r_date as ДатаРегистрации from tuser;
+
+select * from tuser where is_online = true;
+
+update tuser 
+set nickname = "Maria"
+where nickname = "Masha";
+
+delete from tuser
+where r_date <= "12-12-1955";
+
+select distinct r_date from tuser;
+
+select * from tuser
+order by r_date asc;
+
+select * from tuser
+order by nickname desk
+limit 10 offset 4;
+
+select * from tuser
+limit all;
+
+select * from tuser
+where nickname in ("Masha", "Maria", "Sasha");
+
+select * from tuser
+where r_date between '12-12-2004' and '12-12-2017';
+
+select * from tuser
+where nickname like "%m%";
+
+drop table tuser;

@@ -1,0 +1,214 @@
+ENUM:
+
+create type online_status as enum ('online', 'offline');
+create table user (
+    id serial primary key,
+    username varchar(30),
+    status online_status
+);
+insert into user (username, status)
+values ('Mark', 'offline');
+
+
+-------------------------------JOIN:------------------------------------------
+
+
+TABLE1:
+CREATE TABLE Products
+(
+    Id SERIAL PRIMARY KEY,
+    ProductName VARCHAR(30) NOT NULL,
+    Company VARCHAR(20) NOT NULL,
+    ProductCount INTEGER DEFAULT 0,
+    Price NUMERIC NOT NULL
+);
+
+TABLE2:
+CREATE TABLE Customers
+(
+    Id SERIAL PRIMARY KEY,
+    FirstName VARCHAR(30) NOT NULL
+);
+
+TABLE3:
+CREATE TABLE Orders
+(
+    Id SERIAL PRIMARY KEY,
+    ProductId INTEGER NOT NULL REFERENCES Products(Id) ON DELETE CASCADE,
+    CustomerId INTEGER NOT NULL REFERENCES Customers(Id) ON DELETE CASCADE,
+    CreatedAt DATE NOT NULL,
+    ProductCount INTEGER DEFAULT 1,
+    Price NUMERIC NOT NULL
+);
+
+*** data insertion ***
+
+select * from Products, Customers;     == Products * Customers 
+
+select * from Orders, Customers
+where Orders.CustomerId == Customers.Id;
+
+select customers.FirstName, products.ProductName, orders.CreatedAt
+from orders, products, customers
+where orders.CustomerId == customers.Id and orders.ProductId == products.Id;
+
+
+--------------- INNER JOIN -----------------------------
+select Products.ProductName, Orders.ProductCount, Orders.CreatedAt from Orders
+join Products
+on Orders.ProductId == Products.Id;
+
+[pseudo]
+select P.ProductName, O.ProductCount, O.CreatedAt 
+from Orders as O
+join Products as P
+on P.Id == O.ProductId;
+
+select O.CreatedAt, C.FirstName, P.ProductName
+from Orders as O
+join Customers as C on O.CustomerId == C.Id
+join Products as P on O.ProductId == P.Id;
+
+select O.CreatedAt, C.FirstName, P.ProductName
+from Orders as O
+join Customers as C on O.CustomerId == C.Id
+join Products as P on O.ProductId == P.Id and P.ProductName == "Apple"
+order by C.FirstName;
+
+
+-----------------------------OUTER JOIN-------------------------------
+select C.FirstName, O.CreatedAt, O.ProductId
+from Customers as C left join Orders as O
+on O.CustomerId = C.Id;
+
+select C.FirstName, O.CreatedAt, O.ProductId
+from Customers as C right join Orders as O
+on O.CustomerId = C.Id;
+
+select C.FirstName, O.CreatedAt, O.ProductId
+from Customers as C full join Orders as O
+on O.CustomerId = C.Id;
+
+select C.FirstName, O.CreatedAt, P.ProductName, P.Company
+from Orders as O left join Customers as C on C.Id = O.CustomerId
+                 left join products as P on P.Id = O.ProductId;
+
+select C.FirstName, O.CreatedAt, P.ProductName, P.Company
+from Orders as O left join Customers as C on O.CustomerId = C.Id
+                 left join Products as P on O.ProductId = P.Id
+where P.Price > 55000
+order by O.CreatedAt;
+
+
+select C.FirstName 
+from Customers as C left join Orders as O on O.CustomerId = C.Id
+where O.CustomerId is null;
+
+
+----------------------CROSS JOIN---------------------------
+select * from Orders cross join Customers;
+
+
+
+----------------------GROUP JOIN----------------------------
+выведем для каждого покупателя количество заказов, которые он сделал
+select C.FirstName, count(O.Id)
+from Customers as C join Orders as O on O.CustomerId = C.Id
+group by C.Id, C.FirstName;
+
+выведем товары с общей суммой сделанных заказов
+select P.ProductName, sum(O.Price * O.ProductCount) as totalPrice
+from Products as P left join Orders as O on O.ProductId = P.Id
+group by P.ProductName, P.Id;
+
+
+
+---------------------UNION-----------------------------------
+CREATE TABLE Customers
+(
+    Id SERIAL PRIMARY KEY,
+    FirstName VARCHAR(20) NOT NULL,
+    LastName VARCHAR(20) NOT NULL,
+    AccountSum NUMERIC DEFAULT 0
+);
+CREATE TABLE Employees
+(
+    Id SERIAL PRIMARY KEY,
+    FirstName VARCHAR(20) NOT NULL,
+    LastName VARCHAR(20) NOT NULL
+); ==========================================> общие атрибуты
+  
+INSERT INTO Customers(FirstName, LastName, AccountSum) VALUES
+('Tom', 'Smith', 2000),
+('Sam', 'Brown', 3000),
+('Paul', 'Ins', 4200),
+('Victor', 'Baya', 2800),
+('Mark', 'Adams', 2500),
+('Tim', 'Cook', 2800);
+  
+INSERT INTO Employees(FirstName, LastName) VALUES
+('Homer', 'Simpson'),
+('Tom', 'Smith'),
+('Mark', 'Adams'),
+('Nick', 'Svensson');
+
+
+
+select FirstName, LastName
+from Customers
+union select FirstName, LastName from Employees;
+
+select FirstName, LastName
+from Customers
+union ALL select FirstName, LastName
+from Employees;
+
+
+в зависимости от суммы на счете клиента нам надо начислять ему определенные проценты
+select FirstName, LastName, AccountSum * 1.15 as TotalSum
+from Customers 
+where AccountSum >= 300
+union select FirstName, LastName, AccountSum * 1.1 as TotalSum
+from Customers
+where AccountSum < 300;
+
+
+
+
+----------------MY DB----------------------
+список всех полей с рейтингом выше 4, доступных для бронирования в заданном диапазоне дат, по цене ниже 500
+
+select F.field_name, F.rating, F.price_per_hour, S.time_from, S.time_to, S.available
+from Field as F
+join Schedule as S on S.field_id = F.Id
+where S.available = true and
+      S.time_from >= "" and
+      S.time_to <= "" and
+      F.rating > 4 and
+      F.price_per_hour < 500;
+
+
+список клиентов, которые оставили отзывы с рейтингом ниже среднего рейтинга всех полей
+select C.name, C.surname, R.text, R.rating
+from Client as C
+join Review as R on R.client_id = C.Id
+where R.rating < (
+    select avr(F.rating)
+    from Field as F
+);
+
+
+Получить поля с наибольшим количеством бронирований в текущем месяце
+select f.field_name, count(r.reservation_id) as reservation_count
+from field as f
+join schedule as s on s.field_id = f.field_id
+join reservation as r on r.schedule_id = s.schedule_id
+where 
+	r.created_at >= date_trunc('month', CURRENT_DATE) 
+    AND r.created_at < date_trunc('month', CURRENT_DATE) + interval '1 month'
+group by f.field_name, f.field_id 
+order by reservation_count desc
+limit 1;
+
+
+
