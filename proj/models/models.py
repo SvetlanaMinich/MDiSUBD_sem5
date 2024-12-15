@@ -1,12 +1,18 @@
 from pydantic import BaseModel
 import datetime
+import pydantic
 
 class FieldModel(BaseModel):
     field_id: int
-    field_name: str
-    field_location: str
+    field_name: str 
+    field_location: str 
+    price_per_hour: float 
+    rating: int 
+
+class AddFieldModel(BaseModel):
+    field_name: str 
+    field_location: str 
     price_per_hour: float
-    rating: int
 
 
 class ScheduleModel(BaseModel):
@@ -16,32 +22,32 @@ class ScheduleModel(BaseModel):
     time_to: datetime.datetime
     is_available: bool
 
+class DeleteScheduleModel(BaseModel):
+    schedule_id: int
 
-class ClientModel(BaseModel):
-    client_id: int
+class AddScheduleModel(BaseModel):
+    field_id: int
+    time_from: datetime.datetime
+    time_to: datetime.datetime
+
+
+class ClientRegistrationModel(BaseModel):
     client_name: str
     client_surname: str
     birth_date: datetime.date
-
-
-class ClientCredentialsModel(BaseModel):
-    clientCredentials_id: int
-    client_id: int
     client_login: str
     client_password: str
 
+
+class ClientAuthModel(BaseModel):
+    client_login: str
+    client_password: str
+  
 
 class ClientPaymentCredentialsModel(BaseModel):
     clientPaymentCredentials_id: int
     client_id: int
     card_iban: str
-
-
-class AdminAccModel(BaseModel):
-    adminAcc_id: int
-    nickname: str
-    login: str
-    admin_password: str
 
 
 class ReservationModel(BaseModel):
@@ -58,3 +64,17 @@ class ReviewModel(BaseModel):
     rating: int
     text: str
     created_at: datetime.datetime
+
+class DeleteReviewModel(BaseModel):
+    review_id: int
+
+
+class PriceFilterModel(BaseModel):
+    price_from: float
+    price_to: float
+
+class FieldNameSearchModel(BaseModel):
+    name: str
+
+class DeleteFieldModel(BaseModel):
+    field_id: str

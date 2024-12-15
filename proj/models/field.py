@@ -7,7 +7,7 @@ class Field:
     def create_field(name,
                      location,
                      price_per_hour,
-                     rating):
+                     rating=5):
         comm = f'''insert into field (field_name, field_location, price_per_hour, rating)
         values ('{name}', '{location}', {price_per_hour}, {rating});'''
         response = db.run(comm, fetch=False)
@@ -62,9 +62,9 @@ class Field:
         return response
     
     @staticmethod
-    def get_fields_starting_with(name):
+    def get_fields_with(name):
         comm = f'''select * from field
-        where field_name like '{name}%';'''
+        where field_name like '%{name}%';'''
         response = db.run(comm, fetch=True)
         return response
     

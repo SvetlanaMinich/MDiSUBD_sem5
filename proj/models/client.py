@@ -97,6 +97,18 @@ class Client:
         return response
     
     @staticmethod
+    def get_client_by_id(client_id):
+        comm = f'''select * from client
+        where client_id={client_id};'''
+        response = db.run(comm, fetch=True)
+        if isinstance(response, list):
+            cl_id = response[0][0]
+            comm = f'''select * from client
+            where client_id={cl_id};'''
+            response = db.run(comm, fetch=True)
+        return response
+    
+    @staticmethod
     def get_all_clients():
         comm = f'''select * from client;'''
         response = db.run(comm, fetch=False)

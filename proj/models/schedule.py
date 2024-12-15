@@ -39,8 +39,9 @@ class Schedule:
         return response
     
     @staticmethod
-    def get_schedules_by_field(field_name):
-        comm = f'''call get_schedule_by_name('{field_name}', 0);'''
+    def get_schedules_by_field(field_id):
+        comm = f'''select * from schedule
+        where field_id = {field_id};'''
         response = db.run(comm, fetch=True)
         return response
 

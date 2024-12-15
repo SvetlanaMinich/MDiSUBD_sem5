@@ -21,3 +21,10 @@ class Admin:
         where login='{login}' and admin_password='{password}';'''
         response = db.run(comm, fetch=True)
         return response
+    
+    @staticmethod
+    def get_admin_by_id(adminacc_id):
+        comm = f'''select * from adminacc
+        where adminacc_id={adminacc_id};'''
+        response = db.run(comm, fetch=True)
+        return response

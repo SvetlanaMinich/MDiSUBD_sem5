@@ -1,2 +1,5 @@
-МОДЕЛИ ДАННЫХ и СИСТЕМЫ УПРАВЛЕНИЯ БАЗАМИ ДАННЫХ.pdf
+postgres-docker/
+.idea/
+proj/__pycache__/
 proj/.venv/
+proj/models/__pycache__/

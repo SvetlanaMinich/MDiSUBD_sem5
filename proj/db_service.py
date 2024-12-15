@@ -10,15 +10,14 @@ class DataBaseService:
             password = creds.pwd,
             port = creds.port_id
         )
-
         self.curs = self.conn.cursor()
 
     
     def run(self, command, fetch=False):
         try:
             self.curs.execute(command)
-            if fetch:  # Если нужно получить данные
-                result = self.curs.fetchall()  # Получаем все строки результата
+            if fetch:  
+                result = self.curs.fetchall() 
                 return result
             self.conn.commit()
             return 200
