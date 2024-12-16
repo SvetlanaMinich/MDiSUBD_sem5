@@ -31,6 +31,7 @@ class AddScheduleModel(BaseModel):
     time_to: datetime.datetime
 
 
+
 class ClientRegistrationModel(BaseModel):
     client_name: str
     client_surname: str
@@ -49,12 +50,33 @@ class ClientPaymentCredentialsModel(BaseModel):
     client_id: int
     card_iban: str
 
+class ClientBioModel(BaseModel):
+    client_name: str
+    client_surname: str
+    birth_date: datetime.date
+
+class ClientCredsModel(BaseModel):
+    client_login: str
+    client_password: str
+
+class ClientAddPaymentModel(BaseModel):
+    card_iban: str
+
 
 class ReservationModel(BaseModel):
     reservation_id: int
     client_id: int
     schedule_id: int
     created_at: datetime.datetime
+
+class SelectFieldForReservationModel(BaseModel):
+    field_id: int
+
+class SelectScheduleForReservationModel(BaseModel):
+    schedule_id: int
+
+class DeleteReservationModel(BaseModel):
+    reservation_id: int
 
 
 class ReviewModel(BaseModel):

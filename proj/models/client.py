@@ -42,23 +42,36 @@ class Client:
         return response
     
     @staticmethod
-    def update_client_login(client_id,
-                            login):
+    def update_client_credentials(client_id,
+                            login,
+                            password):
         comm = f'''update clientcredentials
-        set client_login='{login}'
+        set client_login='{login}', client_password='{password}'
         where client_id={client_id};'''
         response = db.run(comm, fetch=False)
         return response
     
     @staticmethod
-    def update_client_password(client_id,
-                               password):
-        comm = f'''update clientcredentials
-        set client_password='{password}'
+    def get_client_password(client_id):
+        comm = f'''select client_password from clientcredentials
         where client_id={client_id};'''
-        response = db.run(comm, fetch=False)
+        response = db.run(comm, fetch=True)
         return response
     
+    @staticmethod
+    def get_client_login(client_id):
+        comm = f'''select client_login from clientcredentials
+        where client_id={client_id};'''
+        response = db.run(comm, fetch=True)
+        return response
+    
+    @staticmethod
+    def get_client_payments(client_id):
+        comm = f'''select * from clientpaymentcredentials
+        where client_id={client_id};'''
+        response = db.run(comm, fetch=True)
+        return response
+
     @staticmethod
     def create_client_payment(client_id,
                               card_iban):
