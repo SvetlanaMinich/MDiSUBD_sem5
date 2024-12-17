@@ -15,6 +15,16 @@ class AddFieldModel(BaseModel):
     price_per_hour: float
 
 
+class FieldWithSchedulesModel(BaseModel):
+    schedule_id: int
+    field_name: str
+    field_location: str
+    price_per_hour: float
+    rating: int
+    time_from: datetime.datetime
+    time_to: datetime.datetime
+
+
 class ScheduleModel(BaseModel):
     schedule_id: int
     field_id: int
@@ -65,9 +75,9 @@ class ClientAddPaymentModel(BaseModel):
 
 class ReservationModel(BaseModel):
     reservation_id: int
-    client_id: int
-    schedule_id: int
-    created_at: datetime.datetime
+    field_name: str
+    time_from: datetime.datetime
+    time_to: datetime.datetime
 
 class SelectFieldForReservationModel(BaseModel):
     field_id: int

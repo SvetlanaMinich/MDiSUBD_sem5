@@ -27,9 +27,14 @@ class Reservation:
     
     @staticmethod
     def get_reservations_by_client(client_id):
-        comm = f'''select * from reservation
-        where client_id={client_id};'''
+        comm = f'''select r.reservation_id, f.field_name, s.time_from, s.time_to
+                    from reservation as r
+                    join schedule as s on s.schedule_id = r.schedule_id
+                    join field as f on f.field_id = s.field_id
+                    where 
+                    r.client_id={client_id};'''
         response = db.run(comm, fetch=True)
+        print(response)
         return response
     
     @staticmethod

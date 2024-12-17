@@ -23,7 +23,6 @@ current_client_id = None
 current_admin_id = None
 
 app = FastAPI()
-# uvicorn main:app --host 0.0.0.0 --port 80
 
 @app.get('/api/', response_model=FastUI, response_model_exclude_none=True)
 def start_page() -> list[AnyComponent]:
@@ -33,6 +32,9 @@ def start_page() -> list[AnyComponent]:
                 components=[
                     c.Button(text='Список полей', on_click=GoToEvent(url='/fields')),
                     c.Button(text='Расписание', on_click=GoToEvent(url='/schedule')),
+                    c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/admin/{current_admin_id}')) if (current_admin_id)
+                        else (c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/user/{current_client_id}')) if (current_client_id) 
+                              else c.Text(text='')),
                     c.Button(text='Регистрация', on_click=GoToEvent(url='/register')) if (not current_client_id and not current_admin_id)
                         else c.Button(text='Выйти', on_click=GoToEvent(url=f'/logout')),
                     c.Heading(text='Главная', level=1),
@@ -62,14 +64,16 @@ def registrate_user(form: Annotated[ClientRegistrationModel, fastui_form(ClientR
                                     birth_date=client['birth_date'],
                                     login=client['client_login'],
                                     password=client['client_password'])
+    print(response)
     if response==200:
         client_id = Client.get_client(login=client['client_login'],
                                       password=client['client_password'])
         current_client_id = client_id[0][0]
         return [c.FireEvent(event=GoToEvent(url=f'/user/{client_id[0][0]}'))]
 
+    
     logger.error(response)
-    return [c.FireEvent(event=GoToEvent(url=f'/register'))]
+    return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
 
 
 @app.post('/api/auth-user')
@@ -78,24 +82,25 @@ def auth_user(form: Annotated[ClientAuthModel, fastui_form(ClientAuthModel)]):
     client = form.model_dump()
     response = Client.get_client(login=client['client_login'],
                                   password=client['client_password'])
-    if isinstance(response, list):
+    print(response)
+    if isinstance(response, list) and len(response) > 0:
         current_client_id = response[0][0]
         return [c.FireEvent(event=GoToEvent(url=f'/user/{response[0][0]}'))]
     
     else:
         response = Admin.get_admin(login=client['client_login'],
                                    password=client['client_password'])
-        if isinstance(response, list):
+        if isinstance(response, list) and len(response) > 0:
+            print(response)
             current_admin_id = response[0][0]
             return [c.FireEvent(event=GoToEvent(url=f'/admin/{response[0][0]}'))]
     
     logger.error(response)
-    return [c.FireEvent(event=GoToEvent(url=f'/login'))]
+    return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
 
 
 @app.get('/api/fields', response_model=FastUI, response_model_exclude_none=True)
 def fields_page(price_from=0, price_to=200, search_name='') -> list[AnyComponent]:
-    print(price_from)
     if search_name:
         response = Field.get_fields_with(name=search_name)
     elif float(price_from) > 0 or float(price_to) != 200:
@@ -104,7 +109,7 @@ def fields_page(price_from=0, price_to=200, search_name='') -> list[AnyComponent
     else:
         response = Field.get_all_fields()
         
-    if isinstance(response, list):
+    if isinstance(response, list) and len(response) > 0:
         fields = [
             FieldModel(field_id=field[0],
                         field_name=field[1],
@@ -118,6 +123,9 @@ def fields_page(price_from=0, price_to=200, search_name='') -> list[AnyComponent
                 components=[
                     c.Button(text='Список полей', on_click=GoToEvent(url='/fields')),
                     c.Button(text='Расписание', on_click=GoToEvent(url='/schedule')),
+                    c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/admin/{current_admin_id}')) if (current_admin_id)
+                        else (c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/user/{current_client_id}')) if (current_client_id) 
+                              else c.Text(text='')),
                     c.Button(text='Регистрация', on_click=GoToEvent(url='/register')) if (not current_client_id and not current_admin_id)
                         else c.Button(text='Выйти', on_click=GoToEvent(url=f'/logout')),
 
@@ -196,6 +204,9 @@ def get_field_by_id(field_id: int) -> list[AnyComponent]:
             components=[
                 c.Button(text='Список полей', on_click=GoToEvent(url='/fields')),
                 c.Button(text='Расписание', on_click=GoToEvent(url='/schedule')),
+                c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/admin/{current_admin_id}')) if (current_admin_id)
+                        else (c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/user/{current_client_id}')) if (current_client_id) 
+                              else c.Text(text='')),
                 c.Button(text='Регистрация', on_click=GoToEvent(url='/register')) if (not current_client_id and not current_admin_id)
                         else c.Button(text='Выйти', on_click=GoToEvent(url=f'/logout')),
 
@@ -225,7 +236,7 @@ def get_field_by_id(field_id: int) -> list[AnyComponent]:
                     ) if len(schedules) > 0 else c.Text(text='Для данного поля доступного свободного времени нет'),
                 
                 c.Heading(text='Хотите забронировать поле?'),
-                c.Button(text='Забронировать поле', on_click=GoToEvent(url=f'/user/make-reservation-page/{field_id}')) if current_client_id
+                c.Button(text='Забронировать поле', on_click=GoToEvent(url=f'/user/make-reservation-page/0')) if current_client_id
                     else c.Text(text='Зарегистрируйтесь, чтобы забронировать поле')
             ]
         ),]
@@ -239,7 +250,7 @@ def schedule_page() -> list[AnyComponent]:
     """
     global current_client_id
     response = Schedule.get_all_schedules()
-    if isinstance(response, list):
+    if isinstance(response, list) and len(response) > 0:
         schedules = [
             ScheduleModel(schedule_id=s[0],
                           field_id=s[1],
@@ -253,6 +264,9 @@ def schedule_page() -> list[AnyComponent]:
                 components=[
                     c.Button(text='Список полей', on_click=GoToEvent(url='/fields')),
                     c.Button(text='Расписание', on_click=GoToEvent(url='/schedule')),
+                    c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/admin/{current_admin_id}')) if (current_admin_id)
+                        else (c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/user/{current_client_id}')) if (current_client_id) 
+                              else c.Text(text='')),
                     c.Button(text='Регистрация', on_click=GoToEvent(url='/register')) if (not current_client_id and not current_admin_id)
                         else c.Button(text='Выйти', on_click=GoToEvent(url=f'/logout')),
 
@@ -278,6 +292,17 @@ def schedule_page() -> list[AnyComponent]:
                 ]
             ),
         ]
+
+
+@app.get('/api/error/{msg}', response_model=FastUI, response_model_exclude_none=True)
+def error_page(msg: str) -> list[AnyComponent]:
+    return [c.Page(
+        components=[
+            c.Heading(text=msg, level=1),
+            c.Link(components=[c.Heading(text='Назад', level=4)], on_click=BackEvent())
+        ]
+    )]
+
 
 @app.get('/api/register', response_model=FastUI, response_model_exclude_none=True)
 def register_page() -> list[AnyComponent]:
@@ -350,6 +375,7 @@ def admin_remove_field(form: Annotated[DeleteFieldModel, fastui_form(DeleteField
     response = Field.delete_field(field_id=field_id)
     if response!=200:
         logger.error(response)
+        return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
     return [c.FireEvent(event=GoToEvent(url=f'/admin/fields-ad'))]
 
 @app.post('/api/admin/add-field')
@@ -361,6 +387,7 @@ def admin_add_field(form: Annotated[AddFieldModel, fastui_form(AddFieldModel)]):
     print(response)
     if response!=200:
         logger.error(response)
+        return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
     return [c.FireEvent(event=GoToEvent(url=f'/admin/fields-ad'))]
 
 @app.get('/api/admin/add-field-page', response_model=FastUI, response_model_exclude_none=True)
@@ -373,6 +400,8 @@ def add_field() -> list[AnyComponent]:
                 c.Button(text='Отзывы', on_click=GoToEvent(url='/admin/reviews-ad')),
                 c.Text(text='   '),
                 c.Button(text='Расписание ', on_click=GoToEvent(url='/admin/schedule-ad')),
+                c.Text(text='   '),
+                c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/admin/{current_admin_id}')),
                 c.Text(text='   '),
                 c.Button(text='Выйти ', on_click=GoToEvent(url=f'/logout')),
 
@@ -399,40 +428,43 @@ def admin_update_field(field_id:int, form: Annotated[AddFieldModel, fastui_form(
 @app.get('/api/admin/update-field-page/{field_id}', response_model=FastUI, response_model_exclude_none=True)
 def update_field(field_id: int) -> list[AnyComponent]:
     response = Field.get_field(field_id=field_id)
-    if isinstance(response, list):
+    if isinstance(response, list) and len(response) > 0:
         field = AddFieldModel(
             field_name=response[0][1],
             field_location=response[0][2],
             price_per_hour=response[0][3],
         )
-    return [
-        c.Page(
-            components=[
-                c.Button(text='Список полей', on_click=GoToEvent(url='/admin/fields-ad')),
-                c.Text(text='   '),
-                c.Button(text='Отзывы', on_click=GoToEvent(url='/admin/reviews-ad')),
-                c.Text(text='   '),
-                c.Button(text='Расписание ', on_click=GoToEvent(url='/admin/schedule-ad')),
-                c.Text(text='   '),
-                c.Button(text='Выйти ', on_click=GoToEvent(url=f'/logout')),
+        return [
+            c.Page(
+                components=[
+                    c.Button(text='Список полей', on_click=GoToEvent(url='/admin/fields-ad')),
+                    c.Text(text='   '),
+                    c.Button(text='Отзывы', on_click=GoToEvent(url='/admin/reviews-ad')),
+                    c.Text(text='   '),
+                    c.Button(text='Расписание ', on_click=GoToEvent(url='/admin/schedule-ad')),
+                    c.Text(text='   '),
+                    c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/admin/{current_admin_id}')),
+                    c.Text(text='   '),
+                    c.Button(text='Выйти ', on_click=GoToEvent(url=f'/logout')),
 
-                c.Heading(text='Изменить поле ' + field.field_name, level=1),
+                    c.Heading(text='Изменить поле ' + (field.field_name), level=1),
 
-                c.ModelForm(
-                        model=AddFieldModel,
-                        submit_url=f'/api/admin/update-field/{response[0][0]}'
-                    ),
-                
-                c.Link(components=[c.Heading(text='Назад', level=4)], on_click=BackEvent()),
-            ]
-        ),
-    ]
+                    c.ModelForm(
+                            model=AddFieldModel,
+                            submit_url=f'/api/admin/update-field/{response[0][0]}'
+                        ),
+                    
+                    c.Link(components=[c.Heading(text='Назад', level=4)], on_click=BackEvent()),
+                ]
+            ),
+        ]
+    return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
 
 
 @app.get('/api/admin/fields-ad', response_model=FastUI, response_model_exclude_none=True)
 def admin_fields_page() -> list[AnyComponent]:
     response = Field.get_all_fields()
-    if isinstance(response, list):
+    if isinstance(response, list) and len(response) > 0:
         fields = [
             FieldModel(field_id=field[0],
                         field_name=field[1],
@@ -449,6 +481,8 @@ def admin_fields_page() -> list[AnyComponent]:
                     c.Button(text='Отзывы', on_click=GoToEvent(url='/admin/reviews-ad')),
                     c.Text(text='   '),
                     c.Button(text='Расписание ', on_click=GoToEvent(url='/admin/schedule-ad')),
+                    c.Text(text='   '),
+                    c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/admin/{current_admin_id}')),
                     c.Text(text='   '),
                     c.Button(text='Выйти ', on_click=GoToEvent(url=f'/logout')),
 
@@ -476,6 +510,7 @@ def admin_fields_page() -> list[AnyComponent]:
                 ]
             ),
         ] 
+    return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
 
 
 @app.get('/api/admin/fields-ad/{field_id}', response_model=FastUI, response_model_exclude_none=True)
@@ -529,6 +564,8 @@ def admin_field_by_id(field_id: int) -> list[AnyComponent]:
                 c.Text(text='   '),
                 c.Button(text='Расписание ', on_click=GoToEvent(url='/admin/schedule-ad')),
                 c.Text(text='   '),
+                c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/admin/{current_admin_id}')),
+                c.Text(text='   '),
                 c.Button(text='Выйти ', on_click=GoToEvent(url=f'/logout')),
 
                 c.Link(components=[c.Heading(text='Назад', level=4)], on_click=BackEvent()),
@@ -539,6 +576,7 @@ def admin_field_by_id(field_id: int) -> list[AnyComponent]:
                 c.Heading(text='Отзывы', level=2),
                 c.Table(
                         data=reviews,
+                        data_model=ReviewModel,
                         columns=[
                             DisplayLookup(field='client_id', title='ID клиента'),
                             DisplayLookup(field='rating', title='Рейтинг'),
@@ -549,6 +587,7 @@ def admin_field_by_id(field_id: int) -> list[AnyComponent]:
                 c.Heading(text='Расписание', level=2),
                 c.Table(
                         data=schedules,
+                        data_model=ScheduleModel,
                         columns=[
                             DisplayLookup(field='time_from', title='Время начала', mode=DisplayMode.date),
                             DisplayLookup(field='time_to', title='Время окончания', mode=DisplayMode.date),
@@ -557,7 +596,7 @@ def admin_field_by_id(field_id: int) -> list[AnyComponent]:
                     ) if len(schedules) > 0 else c.Text(text='Для данного поля доступного свободного времени нет'),
             ]
         ),]
-    return response_field
+    return [c.FireEvent(event=GoToEvent(url=f'/error/{response_field}'))]
 
 #---------------------- admin schedule -------------------------
 
@@ -567,6 +606,7 @@ def admin_delete_schedule(form: Annotated[DeleteScheduleModel, fastui_form(Delet
     response = Schedule.delete_schedule(schedule_id=schedule_id)
     if response!=200:
         logger.error(response)
+        return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
     return [c.FireEvent(event=GoToEvent(url=f'/admin/schedule-ad'))]
 
 @app.post('/api/admin/add-schedule')
@@ -578,13 +618,14 @@ def admin_add_schedule(form: Annotated[AddScheduleModel, fastui_form(AddSchedule
                                         time_to=schedule['time_to'])
     if response!=200:
         logger.error(response)
+        return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
     return [c.FireEvent(event=GoToEvent(url=f'/admin/schedule-ad'))]
 
 @app.get('/api/admin/add-schedule-page', response_model=FastUI, response_model_exclude_none=True)
 def add_schedule_page() -> list[AnyComponent]:
     fields = []
     response = Field.get_all_fields()
-    if isinstance(response, list):
+    if isinstance(response, list) and len(response) > 0:
         fields = [
             FieldModel(field_id=field[0],
                         field_name=field[1],
@@ -594,41 +635,45 @@ def add_schedule_page() -> list[AnyComponent]:
             for field in response
         ]
 
-    return [
-        c.Page(
-            components=[
-                c.Button(text='Список полей', on_click=GoToEvent(url='/admin/fields-ad')),
-                c.Text(text='   '),
-                c.Button(text='Отзывы', on_click=GoToEvent(url='/admin/reviews-ad')),
-                c.Text(text='   '),
-                c.Button(text='Расписание ', on_click=GoToEvent(url='/admin/schedule-ad')),
-                c.Text(text='   '),
-                c.Button(text='Выйти ', on_click=GoToEvent(url=f'/logout')),
+        return [
+            c.Page(
+                components=[
+                    c.Button(text='Список полей', on_click=GoToEvent(url='/admin/fields-ad')),
+                    c.Text(text='   '),
+                    c.Button(text='Отзывы', on_click=GoToEvent(url='/admin/reviews-ad')),
+                    c.Text(text='   '),
+                    c.Button(text='Расписание ', on_click=GoToEvent(url='/admin/schedule-ad')),
+                    c.Text(text='   '),
+                    c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/admin/{current_admin_id}')),
+                    c.Text(text='   '),
+                    c.Button(text='Выйти ', on_click=GoToEvent(url=f'/logout')),
 
-                c.Heading(text='Новый элемент расписания', level=1),
+                    c.Heading(text='Новый элемент расписания', level=1),
 
-                c.Text(text='Доступные поля'),
-                c.Table(
-                        data=fields,
-                        data_model=FieldModel,
-                        columns=[
-                            DisplayLookup(field='field_id', title='ID'),
-                            DisplayLookup(field='field_name', title='Название', on_click=GoToEvent(url='/admin/fields-ad/{field_id}')),
-                            DisplayLookup(field='field_location', title='Локация'),
-                            DisplayLookup(field='price_per_hour', title='Стоимость за час'),
-                            DisplayLookup(field='rating', title='Рейтинг'),
-                        ],
-                    ),
+                    c.Text(text='Доступные поля'),
+                    c.Table(
+                            data=fields,
+                            data_model=FieldModel,
+                            columns=[
+                                DisplayLookup(field='field_id', title='ID'),
+                                DisplayLookup(field='field_name', title='Название', on_click=GoToEvent(url='/admin/fields-ad/{field_id}')),
+                                DisplayLookup(field='field_location', title='Локация'),
+                                DisplayLookup(field='price_per_hour', title='Стоимость за час'),
+                                DisplayLookup(field='rating', title='Рейтинг'),
+                            ],
+                        ),
 
-                c.ModelForm(
-                        model=AddScheduleModel,
-                        submit_url='/api/admin/add-schedule'
-                    ),
-                
-                c.Link(components=[c.Heading(text='Назад', level=4)], on_click=BackEvent()),
-            ]
-        ),
-    ]
+                    c.ModelForm(
+                            model=AddScheduleModel,
+                            submit_url='/api/admin/add-schedule'
+                        ),
+                    
+                    c.Link(components=[c.Heading(text='Назад', level=4)], on_click=BackEvent()),
+                ]
+            ),
+        ]
+    return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
+
 
 @app.get('/api/admin/schedule-ad', response_model=FastUI, response_model_exclude_none=True)
 def admin_schedule_page() -> list[AnyComponent]:
@@ -636,7 +681,7 @@ def admin_schedule_page() -> list[AnyComponent]:
     Страница с расписанием.
     """
     response = Schedule.get_all_schedules()
-    if isinstance(response, list):
+    if isinstance(response, list) and len(response) > 0:
         schedules = [
             ScheduleModel(schedule_id=s[0],
                           field_id=s[1],
@@ -653,6 +698,8 @@ def admin_schedule_page() -> list[AnyComponent]:
                     c.Button(text='Отзывы', on_click=GoToEvent(url='/admin/reviews-ad')),
                     c.Text(text='   '),
                     c.Button(text='Расписание ', on_click=GoToEvent(url='/admin/schedule-ad')),
+                    c.Text(text='   '),
+                    c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/admin/{current_admin_id}')),
                     c.Text(text='   '),
                     c.Button(text='Выйти ', on_click=GoToEvent(url=f'/logout')),
 
@@ -680,6 +727,7 @@ def admin_schedule_page() -> list[AnyComponent]:
                 ]
             ),
         ]
+    return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
 
 
 # ----------------------------- admin reviews --------------------------------
@@ -690,6 +738,7 @@ def admin_delete_review(form: Annotated[DeleteReviewModel, fastui_form(DeleteRev
     response = Review.delete_review(review_id=review_id)
     if response!=200:
         logger.error(response)
+        return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
     return [c.FireEvent(event=GoToEvent(url=f'/admin/reviews-ad'))]
 
 
@@ -699,7 +748,7 @@ def admin_reviews_page() -> list[AnyComponent]:
     Страница с отзывами.
     """
     response = Review.get_all_reviews()
-    if isinstance(response, list):
+    if isinstance(response, list) and len(response) > 0:
         reviews = [
             ReviewModel(
                     review_id=r[0],
@@ -719,6 +768,8 @@ def admin_reviews_page() -> list[AnyComponent]:
                     c.Button(text='Отзывы', on_click=GoToEvent(url='/admin/reviews-ad')),
                     c.Text(text='   '),
                     c.Button(text='Расписание ', on_click=GoToEvent(url='/admin/schedule-ad')),
+                    c.Text(text='   '),
+                    c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/admin/{current_admin_id}')),
                     c.Text(text='   '),
                     c.Button(text='Выйти ', on_click=GoToEvent(url=f'/logout')),
 
@@ -744,6 +795,7 @@ def admin_reviews_page() -> list[AnyComponent]:
                 ]
             ),
         ]
+    return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
 
 
 @app.get('/api/admin/{client_id}', response_model=FastUI, response_model_exclude_none=True)
@@ -754,22 +806,25 @@ def admin_page(client_id:int) -> list[AnyComponent]:
     global current_admin_id
     current_admin_id = client_id
     response = Admin.get_admin_by_id(client_id)
-    return [
-        c.Page(
-            components=[
-                c.Button(text='Список полей', on_click=GoToEvent(url='/admin/fields-ad')),
-                c.Text(text='   '),
-                c.Button(text='Отзывы', on_click=GoToEvent(url='/admin/reviews-ad')),
-                c.Text(text='   '),
-                c.Button(text='Расписание ', on_click=GoToEvent(url='/admin/schedule-ad')),
-                c.Text(text='   '),
-                c.Button(text='Выйти ', on_click=GoToEvent(url=f'/logout')),
+    if isinstance(response, list) and len(response) > 0:
+        return [
+            c.Page(
+                components=[
+                    c.Button(text='Список полей', on_click=GoToEvent(url='/admin/fields-ad')),
+                    c.Text(text='   '),
+                    c.Button(text='Отзывы', on_click=GoToEvent(url='/admin/reviews-ad')),
+                    c.Text(text='   '),
+                    c.Button(text='Расписание ', on_click=GoToEvent(url='/admin/schedule-ad')),
+                    c.Text(text='   '),
+                    c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/admin/{client_id}')),
+                    c.Text(text='   '),
+                    c.Button(text='Выйти ', on_click=GoToEvent(url=f'/logout')),
 
-                c.Heading(text='Админ ' + response[0][1], level=1),
-            ]
-        ),
-    ]
-
+                    c.Heading(text='Админ ' + response[0][1], level=1),
+                ]
+            ),
+        ]
+    return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
 
 # ====================
 # CLIENT
@@ -785,96 +840,78 @@ def user_page(client_id:int) -> list[AnyComponent]:
     global current_client_id
     current_client_id = client_id
     response = Client.get_client_by_id(client_id=client_id)
-    client = ClientRegistrationModel(
-        client_name=response[0][1],
-        client_surname=response[0][2],
-        birth_date=response[0][3],
-        client_login='',
-        client_password='',
-    )
-    response = Client.get_client_login(client_id=client_id)
-    client.client_login = response[0][0]
-    response = Client.get_client_password(client_id=client_id)
-    client.client_password = response[0][0]
+    if isinstance(response, list) and len(response) > 0:
+        client = ClientRegistrationModel(
+            client_name=response[0][1],
+            client_surname=response[0][2],
+            birth_date=response[0][3],
+            client_login='',
+            client_password='',
+        )
+        response = Client.get_client_login(client_id=client_id)
+        client.client_login = response[0][0]
+        response = Client.get_client_password(client_id=client_id)
+        client.client_password = response[0][0]
 
-    response = Reservation.get_reservations_by_client(client_id=client_id)
-    reservations = []
-    if isinstance(response, list):
-        reservations = [
-            ReservationModel(
-                reservation_id=r[0],
-                client_id=r[1],
-                schedule_id=r[2],
-                created_at=r[3]
-            )
-            for r in response
-        ]
-    schedules = []
-    for r in reservations:
-        response = Schedule.get_schedule(schedule_id=r.schedule_id)
-        if isinstance(response, list):
-            schedules.append(ScheduleModel(
-                schedule_id=response[0][0],
-                field_id=response[0][1],
-                time_from=response[0][2],
-                time_to=response[0][3],
-                is_available=False
-            ))
-
-    return [
-        c.Page(
-            components=[
-                c.Button(text='Список полей', on_click=GoToEvent(url='/fields')),
-                c.Text(text='   '),
-                c.Button(text='Расписание', on_click=GoToEvent(url='/schedule')),
-                c.Text(text='   '),
-                c.Button(text='Выйти', on_click=GoToEvent(url=f'/logout')),
-                c.Text(text='                         '),
-                
-                c.Heading(text='Клиент   ' + client.client_name, level=1),
-                c.Text(text=client.client_name.capitalize() + '  ' + client.client_surname.capitalize()),
-                c.Heading(text='Birth date:   ' + str(client.birth_date), level=5),
-
-                
-                c.Button(text='Изменить информацию о себе', on_click=GoToEvent(url=f'/user/{client_id}/update-bio-page')),
-                c.Text(text='    '),
-                c.Button(text='Изменить логин или (и) пароль', on_click=GoToEvent(url=f'/user/{client_id}/update-creds-page')),
-                c.Text(text='    '),
-                c.Button(text='Добавить способ оплаты', on_click=GoToEvent(url=f'/user/{client_id}/add-payment-page')),
-                c.Text(text='    '),
-                c.Button(text='Удалить способ оплаты', on_click=GoToEvent(url=f'/user/{client_id}/delete-payment-page')),
-                c.Heading(text='Мои брони:      '),
-                c.Button(text='Забронировать поле', on_click=GoToEvent(url=f'/user/make-reservation-page/0')),
-
-                c.Table(
-                    data=reservations,
-                    data_model=ReservationModel,
-                    columns=[
-                        DisplayLookup(field='reservation_id', title='ID'),
-                        DisplayLookup(field='schedule_id', title='ID расписания'),
-                        DisplayLookup(field='created_at', title='Время бронирования', mode=DisplayMode.datetime),
-                    ],
-                ),
-                c.Heading(text='Расписания брони:      '),
-                c.Table(
-                    data=schedules,
-                    data_model=ScheduleModel,
-                    columns=[
-                        DisplayLookup(field='schedule_id', title='ID'),
-                        DisplayLookup(field='field_id', title='ID поля'),
-                        DisplayLookup(field='time_from', title='Время начала', mode=DisplayMode.datetime),
-                        DisplayLookup(field='time_to', title='Время окончания', mode=DisplayMode.datetime),
-                    ],
-                ),
-
-                c.Heading(text='Удалить бронь', level=3),
-                c.ModelForm(
-                        model=DeleteReservationModel,
-                        submit_url=f'/api/user/delete-reservation'
-                    ),
+        response = Reservation.get_reservations_by_client(client_id=client_id)
+        reservations = []
+        if isinstance(response, list) and len(response) > 0:
+            reservations = [
+                ReservationModel(
+                    reservation_id=r[0],
+                    field_name=r[1],
+                    time_from=r[2],
+                    time_to=r[3]
+                )
+                for r in response
             ]
-        ),
-    ]
+
+        return [
+            c.Page(
+                components=[
+                    c.Button(text='Список полей', on_click=GoToEvent(url='/fields')),
+                    c.Text(text='   '),
+                    c.Button(text='Расписание', on_click=GoToEvent(url='/schedule')),
+                    c.Text(text='   '),
+                    c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/user/{client_id}')),
+                    c.Text(text='   '),
+                    c.Button(text='Выйти', on_click=GoToEvent(url=f'/logout')),
+                    c.Text(text='                         '),
+                    
+                    c.Heading(text='Клиент   ' + client.client_name, level=1),
+                    c.Text(text=client.client_name.capitalize() + '  ' + client.client_surname.capitalize()),
+                    c.Heading(text='Birth date:   ' + str(client.birth_date), level=5),
+
+                    
+                    c.Button(text='Изменить информацию о себе', on_click=GoToEvent(url=f'/user/{client_id}/update-bio-page')),
+                    c.Text(text='    '),
+                    c.Button(text='Изменить логин или (и) пароль', on_click=GoToEvent(url=f'/user/{client_id}/update-creds-page')),
+                    c.Text(text='    '),
+                    c.Button(text='Добавить способ оплаты', on_click=GoToEvent(url=f'/user/{client_id}/add-payment-page')),
+                    c.Text(text='    '),
+                    c.Button(text='Удалить способ оплаты', on_click=GoToEvent(url=f'/user/{client_id}/delete-payment-page')),
+                    c.Heading(text='Мои брони:      '),
+                    c.Button(text='Забронировать поле', on_click=GoToEvent(url='/user/make-reservation-page/0')),
+
+                    c.Table(
+                        data=reservations,
+                        data_model=ReservationModel,
+                        columns=[
+                            DisplayLookup(field='reservation_id', title='ID'),
+                            DisplayLookup(field='field_name', title='Поле'),
+                            DisplayLookup(field='time_from', title='Время начала', mode=DisplayMode.datetime),
+                            DisplayLookup(field='time_to', title='Время окончания', mode=DisplayMode.datetime),
+                        ],
+                    ),
+                    c.Heading(text='Удалить бронь', level=3),
+                    c.ModelForm(
+                            model=DeleteReservationModel,
+                            submit_url=f'/api/user/delete-reservation'
+                        ),
+                ]
+            ),
+        ]
+    return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
 
 
 @app.post('/api/user/{client_id}/update-bio')
@@ -888,6 +925,7 @@ def update_bio(client_id:int, form: Annotated[ClientBioModel, fastui_form(Client
                                                birth_date=client['birth_date'])
     if response!=200:
         logger.error(response)
+        return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
     return [c.FireEvent(event=GoToEvent(url=f'/user/{client_id}'))]
 
 @app.get('/api/user/{client_id}/update-bio-page', response_model=FastUI, response_model_exclude_none=True)
@@ -901,6 +939,8 @@ def update_bio_page(client_id:int) -> list[AnyComponent]:
                 c.Button(text='Список полей', on_click=GoToEvent(url='/user/fields')),
                 c.Text(text='   '),
                 c.Button(text='Расписание', on_click=GoToEvent(url='/user/schedule')),
+                c.Text(text='   '),
+                c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/user/{client_id}')),
                 c.Text(text='   '),
                 c.Button(text='Выйти', on_click=GoToEvent(url=f'/logout')),
                 c.Text(text='                         '),
@@ -925,6 +965,7 @@ def update_creds(client_id:int, form: Annotated[ClientCredsModel, fastui_form(Cl
                                                 password=client['client_password'])
     if response!=200:
         logger.error(response)
+        return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
     return [c.FireEvent(event=GoToEvent(url=f'/user/{client_id}'))]
 
 @app.get('/api/user/{client_id}/update-creds-page', response_model=FastUI, response_model_exclude_none=True)
@@ -938,6 +979,8 @@ def update_creds_page(client_id:int) -> list[AnyComponent]:
                 c.Button(text='Список полей', on_click=GoToEvent(url='/user/fields')),
                 c.Text(text='   '),
                 c.Button(text='Расписание', on_click=GoToEvent(url='/user/schedule')),
+                c.Text(text='   '),
+                c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/user/{client_id}')),
                 c.Text(text='   '),
                 c.Button(text='Выйти', on_click=GoToEvent(url=f'/logout')),
                 c.Text(text='                         '),
@@ -960,6 +1003,7 @@ def update_payment(client_id:int, form: Annotated[ClientAddPaymentModel, fastui_
                                             card_iban=client['card_iban'])
     if response!=200:
         logger.error(response)
+        return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
     return [c.FireEvent(event=GoToEvent(url=f'/user/{client_id}'))]
 
 @app.get('/api/user/{client_id}/add-payment-page', response_model=FastUI, response_model_exclude_none=True)
@@ -973,6 +1017,8 @@ def update_payment_page(client_id:int) -> list[AnyComponent]:
                 c.Button(text='Список полей', on_click=GoToEvent(url='/user/fields')),
                 c.Text(text='   '),
                 c.Button(text='Расписание', on_click=GoToEvent(url='/user/schedule')),
+                c.Text(text='   '),
+                c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/user/{client_id}')),
                 c.Text(text='   '),
                 c.Button(text='Выйти', on_click=GoToEvent(url=f'/logout')),
                 c.Text(text='                         '),
@@ -995,6 +1041,7 @@ def delete_payment(client_id:int, form: Annotated[ClientAddPaymentModel, fastui_
                                             card_iban=client['card_iban'])
     if response!=200:
         logger.error(response)
+        return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
     return [c.FireEvent(event=GoToEvent(url=f'/user/{client_id}'))]
 
 @app.get('/api/user/{client_id}/delete-payment-page', response_model=FastUI, response_model_exclude_none=True)
@@ -1003,42 +1050,46 @@ def delete_payment_page(client_id:int) -> list[AnyComponent]:
     Страница изменения данных о пользователе.
     """
     response = Client.get_client_payments(client_id=client_id)
-    payments = [
-        ClientPaymentCredentialsModel(
-            clientPaymentCredentials_id=p[0],
-            client_id=p[1],
-            card_iban=p[2]
-        )
-        for p in response
-    ]
-    return [
-        c.Page(
-            components=[
-                c.Button(text='Список полей', on_click=GoToEvent(url='/user/fields')),
-                c.Text(text='   '),
-                c.Button(text='Расписание', on_click=GoToEvent(url='/user/schedule')),
-                c.Text(text='   '),
-                c.Button(text='Выйти', on_click=GoToEvent(url=f'/logout')),
-                c.Text(text='                         '),
-                c.Link(components=[c.Heading(text='Назад', level=4)], on_click=BackEvent()),
-                c.Heading(text='Доступные карты клиента', level=2),
-                c.Table(
-                        data=payments,
-                        data_model=ClientPaymentCredentialsModel,
-                        columns=[
-                            DisplayLookup(field='clientPaymentCredentials_id', title='ID'),
-                            DisplayLookup(field='card_iban', title='IBAN'),
-                        ],
-                    ),
-                
-                c.Heading(text='Удалить карту', level=3),
-                c.ModelForm(
-                        model=ClientAddPaymentModel,
-                        submit_url=f'/api/user/{client_id}/delete-payment'
-                    ),
-            ]
-        ),
-    ]
+    if isinstance(response, list) and len(response) > 0:
+        payments = [
+            ClientPaymentCredentialsModel(
+                clientPaymentCredentials_id=p[0],
+                client_id=p[1],
+                card_iban=p[2]
+            )
+            for p in response
+        ]
+        return [
+            c.Page(
+                components=[
+                    c.Button(text='Список полей', on_click=GoToEvent(url='/user/fields')),
+                    c.Text(text='   '),
+                    c.Button(text='Расписание', on_click=GoToEvent(url='/user/schedule')),
+                    c.Text(text='   '),
+                    c.Button(text='Личный аккаунт', on_click=GoToEvent(url=f'/user/{client_id}')),
+                    c.Text(text='   '),
+                    c.Button(text='Выйти', on_click=GoToEvent(url=f'/logout')),
+                    c.Text(text='                         '),
+                    c.Link(components=[c.Heading(text='Назад', level=4)], on_click=BackEvent()),
+                    c.Heading(text='Доступные карты клиента', level=2),
+                    c.Table(
+                            data=payments,
+                            data_model=ClientPaymentCredentialsModel,
+                            columns=[
+                                DisplayLookup(field='clientPaymentCredentials_id', title='ID'),
+                                DisplayLookup(field='card_iban', title='IBAN'),
+                            ],
+                        ),
+                    
+                    c.Heading(text='Удалить карту', level=3),
+                    c.ModelForm(
+                            model=ClientAddPaymentModel,
+                            submit_url=f'/api/user/{client_id}/delete-payment'
+                        ),
+                ]
+            ),
+        ]
+    return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
 
 
 # -------------------------- USER RESERVATION
@@ -1050,12 +1101,9 @@ def select_field(form: Annotated[DeleteReservationModel, fastui_form(DeleteReser
     response = Reservation.delete_reservation(reservation_id=reservation_id)
     if response!=200:
         logger.error(response)
+        return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
     return [c.FireEvent(event=GoToEvent(url=f'/user/{current_client_id}'))]
 
-@app.post('/api/user/select-field-for-reservation')
-def select_field(form: Annotated[SelectFieldForReservationModel, fastui_form(SelectFieldForReservationModel)]):
-    field_id = form.model_dump()['field_id']
-    return [c.FireEvent(event=GoToEvent(url=f'/user/make-reservation-page/{field_id}'))]
 
 @app.post('/api/user/select-schedule-for-reservation')
 def select_field(form: Annotated[SelectScheduleForReservationModel, fastui_form(SelectScheduleForReservationModel)]):
@@ -1068,82 +1116,54 @@ def select_field(form: Annotated[SelectScheduleForReservationModel, fastui_form(
     )
     if response!=200:
         logger.error(response)
+        return [c.FireEvent(event=GoToEvent(url=f'/error/{response}'))]
     return [c.FireEvent(event=GoToEvent(url=f'/user/{current_client_id}'))]
 
+
 @app.get('/api/user/make-reservation-page/{field_id}', response_model=FastUI, response_model_exclude_none=True)
-def make_reservation_page(field_id: int) -> list[AnyComponent]:
+def make_reservation_page(field_id: int = None) -> list[AnyComponent]:
+    response = Field.get_all_fields_witn_schedules()
+    print(response)
     fields = []
-    schedules = []
-    if field_id == 0:
-        response = Field.get_all_fields()
+    if isinstance(response, list) and len(response) > 0:
         fields = [
-                FieldModel(field_id=field[0],
-                            field_name=field[1],
-                            field_location=field[2],
-                            price_per_hour=field[3],
-                            rating=field[4])
-                for field in response
-            ]
-    else:
-        response = Field.get_field(field_id=field_id)
-        fields = [
-                FieldModel(field_id=field[0],
-                            field_name=field[1],
-                            field_location=field[2],
-                            price_per_hour=field[3],
-                            rating=field[4])
-                for field in response
-            ]
-        
-        response = Schedule.get_schedules_by_field(field_id=field_id)
-        schedules = [
-            ScheduleModel(
-                    schedule_id=s[0],
-                    field_id=s[1],
-                    time_from=s[2],
-                    time_to=s[3],
-                    is_available=s[4],
-                )
-            for s in response
+            FieldWithSchedulesModel(
+                schedule_id=f[0], 
+                field_name=f[1], 
+                field_location=f[2], 
+                price_per_hour=f[3], 
+                rating=f[4], 
+                time_from=f[5], 
+                time_to=f[6]
+            )
+            for f in response
         ]
-    
-    return c.Page(
+    return [c.Page(
         components=[
             c.Link(components=[c.Heading(text='Назад', level=4)], on_click=BackEvent()),
-            c.Heading(text='Поля', level=2),
+            c.Heading(text='Доступное расписание', level=2),
             c.Table(
                         data=fields,
-                        data_model=FieldModel,
+                        data_model=FieldWithSchedulesModel,
                         columns=[
-                            DisplayLookup(field='field_id', title='ID'),
-                            DisplayLookup(field='field_name', title='Название'),
+                            DisplayLookup(field='schedule_id', title='ID'),
+                            DisplayLookup(field='field_name', title='Название поля'),
                             DisplayLookup(field='field_location', title='Локация'),
                             DisplayLookup(field='price_per_hour', title='Стоимость за час'),
                             DisplayLookup(field='rating', title='Рейтинг'),
-                        ],
-                    ),
-            c.ModelForm(
-                model=SelectFieldForReservationModel,
-                submit_url=f'/api/user/select-field-for-reservation'
-            ) if field_id==0 else
-            c.Table(
-                        data=schedules,
-                        data_model=ScheduleModel,
-                        columns=[
-                            DisplayLookup(field='schedule_id', title='ID'),
                             DisplayLookup(field='time_from', title='Время начала', mode=DisplayMode.datetime),
                             DisplayLookup(field='time_to', title='Время окончания', mode=DisplayMode.datetime),
-                            DisplayLookup(field='is_available', title='Доступно'),
                         ],
                     ),
             c.ModelForm(
                     model=SelectScheduleForReservationModel,
                     submit_url=f'/api/user/select-schedule-for-reservation'
-                ) if len(schedules) > 0 else c.Text(text='Доступного времени для бронирования нет'), 
+                ) if len(fields) > 0 else c.Text(text='Доступного времени для бронирования нет'), 
 
         ]
-    )
+    )]
 
+# uvicorn main:app --host 0.0.0.0 --port 80
 
 
 @app.get('/{path:path}')

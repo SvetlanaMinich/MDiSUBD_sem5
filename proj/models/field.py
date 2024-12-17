@@ -55,6 +55,17 @@ class Field:
         return response
     
     @staticmethod
+    def get_all_fields_witn_schedules():
+        comm = f'''select s.schedule_id, f.field_name, f.field_location, f.price_per_hour, f.rating, s.time_from, s.time_to  
+                from field as f
+                join schedule as s
+                on f.field_id = s.field_id
+                where s.is_available=true;'''
+        response = db.run(comm, fetch=True)
+        print("DB Response:", response)
+        return response
+    
+    @staticmethod
     def get_fields_by_price(price_from=0, price_to=200):
         comm = f'''select * from field
         where price_per_hour >= {price_from} and price_per_hour <= {price_to};'''
